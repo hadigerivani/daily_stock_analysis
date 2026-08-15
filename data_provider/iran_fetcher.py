@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from .base import BaseFetcher
 import logging
 
-# توجه: این کتابخانه باید قبلاً با pip install pytse-client نصب شده باشد
+# Note: This library must be installed with pip install pytse-client
 import pytse_client as tse
 
 logger = logging.getLogger(__name__)
@@ -16,13 +16,13 @@ class IranFetcher(BaseFetcher):
 
     def get_daily_data(self, stock_code: str, start_date: str, end_date: str):
         """
-        دریافت داده‌های تاریخی یک سهم از بورس تهران.
-        stock_code: کد نماد، مثلاً 'ولملت' یا 'فولاد'
+        Fetch historical daily data for a Tehran Stock Exchange symbol.
+        stock_code: symbol code, e.g. 'ولملت' or 'فولاد'
         """
         try:
             logger.info(f"[IranFetcher] Getting daily data for {stock_code}")
             
-            # دریافت داده از pytse_client
+            # Fetch data from pytse_client
             data = tse.download(symbols=stock_code, write_to_csv=False)
             
             if stock_code not in data or data[stock_code].empty:
@@ -31,7 +31,7 @@ class IranFetcher(BaseFetcher):
                 
             df = data[stock_code]
             
-            # تبدیل به فرمت استاندارد پروژه
+            # Rename columns to standard project format
             df = df.rename(columns={
                 'date': 'date',
                 'open': 'open',
@@ -43,7 +43,7 @@ class IranFetcher(BaseFetcher):
             
             df['date'] = pd.to_datetime(df['date'])
             
-            # فیلتر بر اساس بازه تاریخ
+            # Filter by date range
             start_dt = datetime.strptime(start_date, '%Y%m%d')
             end_dt = datetime.strptime(end_date, '%Y%m%d')
             mask = (df['date'] >= start_dt) & (df['date'] <= end_dt)
@@ -60,7 +60,7 @@ class IranFetcher(BaseFetcher):
             return None
 
     def get_realtime_data(self, stock_code: str):
-        """دریافت داده‌های لحظه‌ای (در صورت نیاز)"""
-        # فعلاً پیاده‌سازی نمی‌کنیم، در صورت نیاز می‌توان اضافه کرد
+        """Fetch real-time data (if needed)"""
+        # Currently not implemented; can be added later if needed
         logger.info(f"[IranFetcher] Realtime data not implemented for {stock_code}")
         return None
