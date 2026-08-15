@@ -1191,9 +1191,9 @@ self._fetchers = sorted(fetchers, key=lambda f: f.priority)
             except ImportError:
                pass
     
-       # 按优先级排序（Tushare 如果配置了 Token 且初始化成功，优先级为 0）
-       self._fetchers.sort(key=lambda f: f.priority)
-       self._refresh_fetcher_indexes_locked()
+            # 按优先级排序（Tushare 如果配置了 Token 且初始化成功，优先级为 0）
+            self._fetchers.sort(key=lambda f: f.priority)
+            self._refresh_fetcher_indexes_locked()
 
         # 构建优先级说明
         priority_info = ", ".join([f"{f.name}(P{f.priority})" for f in self._get_fetchers_snapshot()])
