@@ -30,10 +30,6 @@ from src.services.run_diagnostics import record_provider_run, record_provider_ru
 from .fundamental_adapter import AkshareFundamentalAdapter
 from .yfinance_fundamental_adapter import YfinanceFundamentalAdapter
 from .realtime_types import CircuitBreaker
-from .tushare_fetcher import TushareFetcher
-from .longbridge_fetcher import LongbridgeFetcher
-from .finnhub_fetcher import FinnhubFetcher
-from .alphavantage_fetcher import AlphaVantageFetcher
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -1139,7 +1135,7 @@ def _init_default_fetchers(self):
         except ImportError:
             pass
 
-        # داده‌گیرهای اختیاری (با try/except برای جلوگیری از خطا)
+        # داده‌گیرهای اختیاری (همه با try/except)
         try:
             from .tushare_fetcher import TushareFetcher
             self._fetchers.append(TushareFetcher())
