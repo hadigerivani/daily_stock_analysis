@@ -30,6 +30,7 @@ from src.services.run_diagnostics import record_provider_run, record_provider_ru
 from .fundamental_adapter import AkshareFundamentalAdapter
 from .yfinance_fundamental_adapter import YfinanceFundamentalAdapter
 from .realtime_types import CircuitBreaker
+from .iran_fetcher import IranFetcher
 
 # 配置日志
 logger = logging.getLogger(__name__)
@@ -1126,6 +1127,9 @@ class DataFetcherManager:
           2. PytdxFetcher (Priority 2) - 通达信
           3. BaostockFetcher (Priority 3)
           4. YfinanceFetcher (Priority 4)
+          5. IranFetcher(priority=2),
+          ]
+self._fetchers = sorted(fetchers, key=lambda f: f.priority)
         """
         from src.config import get_config
         from .efinance_fetcher import EfinanceFetcher
