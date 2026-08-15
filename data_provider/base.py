@@ -871,7 +871,65 @@ class DataFetcherManager:
             self._fetchers.append(fetcher)
             self._fetchers.sort(key=lambda f: f.priority)
             self._refresh_fetcher_indexes_locked()
+    def get_daily_data(
+        self,
+        stock_code: str,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        days: int = 30
+    ) -> Tuple[pd.DataFrame, str]:
+        """
+        Get daily data (automatic failover).
+        """
+        stock_code = normalize_stock_code(stock_code)
+        fetchers = self._get_fetchers_snapshot()
+        errors = []
+        request_start = time.time()
 
+        # Filter by market and capability
+        market = _market_tag(stock_code)
+        if market != "cn":
+            fetchers = self._filter_daily_fetchers_for_market(fetchers, market)
+        fetchers = self._filter_fetchers_by_capability(fetchers, capability="daily_data")
+        total_fetchers = len(fetchers)
+
+        if total_fetchers == 0:
+            raise DataFetchError(f"No available data sources for {stock_code}")
+
+        for attempt, fetcher in enumerate(fetchers, start=1):
+            if not self._is_daily_source_available(fetcher, market):
+                errors.append(self._daily_source_unavailable_error(fetcher))
+                continue
+            attempt_start = time.time()
+            fallback_to = fetchers[attempt].name if attempt < total_fetchers else None
+            try:
+                logger.info(f"[Data source attempt {attempt}/{total_fetchers}] [{fetcher.name}] fetching {stock_code}...")
+                df = self._call_fetcher_method(
+                    fetcher,
+                    "get_daily_data",
+                    stock_code=stock_code,
+                    start_date=start_date,
+                    end_date=end_date,
+                    days=days
+                )
+                if df is not None and not df.empty:
+                    elapsed = time.time() - request_start
+                    logger.info(f"[Data source complete] {stock_code} using [{fetcher.name}]: rows={len(df)}, elapsed={elapsed:.2f}s")
+                    self._record_daily_source_success(fetcher, market)
+                    return df, fetcher.name
+                elif df is not None and df.empty:
+                    self._record_daily_source_success(fetcher, market)
+            except Exception as e:
+                error_type, error_reason = summarize_exception(e)
+                errors.append(f"[{fetcher.name}] ({error_type}) {error_reason}")
+                self._record_daily_source_failure(fetcher, market, error_reason)
+                if attempt < total_fetchers:
+                    logger.info(f"[Data source switch] {stock_code}: [{fetcher.name}] -> [{fetchers[attempt].name}]")
+                continue
+
+        error_summary = f"All data sources failed for {stock_code}:\n" + "\n".join(errors)
+        raise DataFetchError(error_summary)
+        
     @property
     def available_fetchers(self) -> List[str]:
         return [f.name for f in self._get_fetchers_snapshot()]
