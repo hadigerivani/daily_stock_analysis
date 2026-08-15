@@ -1177,24 +1177,23 @@ self._fetchers = sorted(fetchers, key=lambda f: f.priority)
         # 初始化数据源列表
         self._ensure_concurrency_guards()
         with self._fetchers_lock:
-           self._fetchers = [
-    EfinanceFetcher(priority=0),
-    TencentFetcher(priority=0),
-    AkshareFetcher(priority=1),
-    PytdxFetcher(priority=2),
-    BaostockFetcher(priority=3),
-    YfinanceFetcher(priority=4),
-]
-# اضافه کردن IranFetcher برای بورس تهران (اختیاری)
-try:
-    from .iran_fetcher import IranFetcher
-    self._fetchers.append(IranFetcher(priority=2))
-except ImportError:
-    pass  # اگر فایل وجود نداشت، نادیده بگیر
+        self._fetchers = [
+            EfinanceFetcher(priority=0),
+            TencentFetcher(priority=0),
+            AkshareFetcher(priority=1),
+            PytdxFetcher(priority=2),
+            BaostockFetcher(priority=3),
+            YfinanceFetcher(priority=4),
+       ]
+       try:
+           from .iran_fetcher import IranFetcher
+           self._fetchers.append(IranFetcher(priority=2))
+       except ImportError:
+           pass
     
-            # 按优先级排序（Tushare 如果配置了 Token 且初始化成功，优先级为 0）
-            self._fetchers.sort(key=lambda f: f.priority)
-            self._refresh_fetcher_indexes_locked()
+       # 按优先级排序（Tushare 如果配置了 Token 且初始化成功，优先级为 0）
+       self._fetchers.sort(key=lambda f: f.priority)
+       self._refresh_fetcher_indexes_locked()
 
         # 构建优先级说明
         priority_info = ", ".join([f"{f.name}(P{f.priority})" for f in self._get_fetchers_snapshot()])
