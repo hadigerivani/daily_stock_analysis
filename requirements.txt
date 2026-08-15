@@ -62,6 +62,7 @@ lxml_html_clean             # Fix for lxml.html.clean ImportError in newer lxml 
 
 # Report template engine (Report Engine P0)
 jinja2>=3.1.0               # Jinja2 template engine for report rendering
+pytse-client
 
 # FastAPI Web framework
 fastapi>=0.109.0            # Modern Python Web framework
