@@ -10,8 +10,8 @@ import pytse_client as tse
 logger = logging.getLogger(__name__)
 
 class IranFetcher(BaseFetcher):
-    def __init__(self, priority: int = 2):
-        super().__init__(priority=priority)
+    def __init__(self):
+        super().__init__()
         self.name = "IranFetcher"
 
     def get_daily_data(self, stock_code: str, start_date: str, end_date: str):
