@@ -1111,24 +1111,23 @@ class DataFetcherManager:
             board_name = str(raw_data).strip()
             return [{"name": board_name}]
         return []
-    
-    def _init_default_fetchers(self) -> None:
-        """
-        初始化默认数据源列表
-
-        优先级动态调整逻辑：
-        - 如果配置了 TUSHARE_TOKEN：实例化 TushareFetcher，并按其内部逻辑提升优先级
-        - 如果配置了 Longbridge OAuth 或 Legacy 凭据：实例化 LongbridgeFetcher 作为美股/港股兜底
-        - 未配置的可选数据源不实例化，避免在批量拉取时反复探测无效源
-        - 默认优先级：
-          0. EfinanceFetcher (Priority 0) - 最高优先级
-          1. AkshareFetcher (Priority 1)
-          2. PytdxFetcher (Priority 2) - 通达信
-          3. BaostockFetcher (Priority 3)
-          4. YfinanceFetcher (Priority 4)
-          5. IranFetcher(priority=2),
-          ]
-self._fetchers = sorted(fetchers, key=lambda f: f.priority)
+    def _init_default_fetchers(self):
+    with self._fetchers_lock:
+        self._fetchers = [
+            EfinanceFetcher(priority=0),
+            TencentFetcher(priority=0),
+            AkshareFetcher(priority=1),
+            PytdxFetcher(priority=2),
+            BaostockFetcher(priority=3),
+            YfinanceFetcher(priority=4),
+        ]
+        try:
+            from .iran_fetcher import IranFetcher
+            self._fetchers.append(IranFetcher(priority=2))
+        except ImportError:
+            pass
+        self._fetchers.sort(key=lambda f: f.priority)
+        self._refresh_fetcher_indexes_locked()
         """
         from src.config import get_config
         from .efinance_fetcher import EfinanceFetcher
