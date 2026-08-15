@@ -1214,9 +1214,9 @@ class DataFetcherManager:
         days: int = 30
     ) -> Tuple[pd.DataFrame, str]:
         """
-        获取日线数据（自动切换数据源）
+       # 获取日线数据（自动切换数据源）
         
-        故障切换策略：
+       # 故障切换策略：
         1. 美股指数/美股股票直接路由到 YfinanceFetcher
         2. 其他代码从最高优先级数据源开始尝试
         3. 捕获异常后自动切换到下一个
