@@ -1184,11 +1184,11 @@ self._fetchers = sorted(fetchers, key=lambda f: f.priority)
                 PytdxFetcher(priority=2),
                 BaostockFetcher(priority=3),
                 YfinanceFetcher(priority=4),
-           ]
-           try:
+            ]
+            try:
                from .iran_fetcher import IranFetcher
                self._fetchers.append(IranFetcher(priority=2))
-           except ImportError:
+            except ImportError:
                pass
     
        # 按优先级排序（Tushare 如果配置了 Token 且初始化成功，优先级为 0）
