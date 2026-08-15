@@ -30,12 +30,6 @@ from src.services.run_diagnostics import record_provider_run, record_provider_ru
 from .fundamental_adapter import AkshareFundamentalAdapter
 from .yfinance_fundamental_adapter import YfinanceFundamentalAdapter
 from .realtime_types import CircuitBreaker
-from .efinance_fetcher import EfinanceFetcher
-from .tencent_fetcher import TencentFetcher
-from .akshare_fetcher import AkshareFetcher
-from .pytdx_fetcher import PytdxFetcher
-from .baostock_fetcher import BaostockFetcher
-from .yfinance_fetcher import YfinanceFetcher
 from .tushare_fetcher import TushareFetcher
 from .longbridge_fetcher import LongbridgeFetcher
 from .finnhub_fetcher import FinnhubFetcher
@@ -1119,59 +1113,64 @@ class DataFetcherManager:
             return [{"name": board_name}]
         return []
 
-    def _init_default_fetchers(self):
-        """
-        Initialize default data sources without priority arguments.
-        This method is called when no fetchers are provided in __init__.
-        """
-        with self._fetchers_lock:
-            self._fetchers = [
-                EfinanceFetcher(),
-                TencentFetcher(),
-                AkshareFetcher(),
-                PytdxFetcher(),
-                BaostockFetcher(),
-                YfinanceFetcher(),
-            ]
+def _init_default_fetchers(self):
+    with self._fetchers_lock:
+        # Import های محلی برای شکستن چرخه واردات
+        from .efinance_fetcher import EfinanceFetcher
+        from .tencent_fetcher import TencentFetcher
+        from .akshare_fetcher import AkshareFetcher
+        from .pytdx_fetcher import PytdxFetcher
+        from .baostock_fetcher import BaostockFetcher
+        from .yfinance_fetcher import YfinanceFetcher
 
-            # Add IranFetcher for Tehran Stock Exchange (if available)
-            try:
-                from .iran_fetcher import IranFetcher
-                self._fetchers.append(IranFetcher())
-            except ImportError:
-                pass
+        self._fetchers = [
+            EfinanceFetcher(),
+            TencentFetcher(),
+            AkshareFetcher(),
+            PytdxFetcher(),
+            BaostockFetcher(),
+            YfinanceFetcher(),
+        ]
 
-            # Optional fetchers based on configuration
-            from src.config import get_config
+        # اضافه کردن IranFetcher برای بورس تهران
+        try:
+            from .iran_fetcher import IranFetcher
+            self._fetchers.append(IranFetcher())
+        except ImportError:
+            pass
+
+        # داده‌گیرهای اختیاری (با try/except برای جلوگیری از خطا)
+        try:
             from .tushare_fetcher import TushareFetcher
+            self._fetchers.append(TushareFetcher())
+        except ImportError:
+            pass
+
+        try:
             from .longbridge_fetcher import LongbridgeFetcher
+            self._fetchers.append(LongbridgeFetcher())
+        except ImportError:
+            pass
+
+        try:
             from .finnhub_fetcher import FinnhubFetcher
+            self._fetchers.append(FinnhubFetcher())
+        except ImportError:
+            pass
+
+        try:
             from .alphavantage_fetcher import AlphaVantageFetcher
+            self._fetchers.append(AlphaVantageFetcher())
+        except ImportError:
+            pass
 
-            config = get_config()
+        # مرتب‌سازی بر اساس اولویت
+        self._fetchers.sort(key=lambda f: f.priority)
+        self._refresh_fetcher_indexes_locked()
 
-            tushare_token = (getattr(config, "tushare_token", None) or "").strip()
-            if tushare_token:
-                self._fetchers.append(TushareFetcher())
-
-            if LongbridgeFetcher.has_configured_credentials(config):
-                self._fetchers.append(LongbridgeFetcher())
-
-            finnhub_api_key = (getattr(config, "finnhub_api_key", None) or "").strip()
-            if finnhub_api_key:
-                self._fetchers.append(FinnhubFetcher())
-
-            alphavantage_api_key = (getattr(config, "alphavantage_api_key", None) or "").strip()
-            if alphavantage_api_key:
-                self._fetchers.append(AlphaVantageFetcher())
-
-            # Sort by priority (lower number = higher priority)
-            self._fetchers.sort(key=lambda f: f.priority)
-            self._refresh_fetcher_indexes_locked()
-
-            # Log initialization
-            priority_info = ", ".join([f"{f.name}(P{f.priority})" for f in self._fetchers])
-            logger.info(f"Initialized {len(self._fetchers)} data sources (by priority): {priority_info}")
+        # لاگ اطلاعات
+        priority_info = ", ".join([f"{f.name}(P{f.priority})" for f in self._fetchers])
+        logger.info(f"Initialized {len(self._fetchers)} data sources (by priority): {priority_info}")
 
     def add_fetcher(self, fetcher: BaseFetcher) -> None:
         """Add a data source and re-sort by priority."""
